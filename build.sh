@@ -435,19 +435,33 @@ download_electron_binary() {
 
 	local zip_name="electron-v${version}-linux-${electron_arch}.zip"
 	local temp_zip="$work_dir/$zip_name"
+	local gh_base="https://github.com/electron/electron/releases/download/v${version}"
 	local urls=(
+		"${gh_base}/${zip_name}"
 		"https://registry.npmmirror.com/-/binary/electron/v${version}/${zip_name}"
 		"https://cdn.npmmirror.com/binaries/electron/v${version}/${zip_name}"
-		"https://github.com/electron/electron/releases/download/v${version}/${zip_name}"
 	)
+
+	# Mirrors are third-party: always verify against Electron's own checksums.
+	local expected_sha
+	expected_sha=$(curl -fsSL --retry 2 --connect-timeout 15 "${gh_base}/SHASUMS256.txt" 2>/dev/null |
+		awk -v f="*$zip_name" '$2 == f || $2 == substr(f, 2) { print $1 }')
+	if [[ -z $expected_sha ]]; then
+		echo "Could not fetch SHASUMS256.txt for Electron v$version from GitHub; refusing unverified download." >&2
+		return 1
+	fi
 
 	echo "Attempting fallback download for Electron binary ($zip_name)..."
 	local downloaded=false
 	for url in "${urls[@]}"; do
 		echo "Trying $url..."
 		if curl -fSL --retry 2 --connect-timeout 15 -o "$temp_zip" "$url" 2>/dev/null; then
-			downloaded=true
-			break
+			if [[ $(sha256sum "$temp_zip" | cut -d' ' -f1) == "$expected_sha" ]]; then
+				downloaded=true
+				break
+			fi
+			echo "Checksum mismatch for $url, skipping." >&2
+			rm -f "$temp_zip"
 		fi
 	done
 
@@ -1061,6 +1075,19 @@ if (m) {
   code = code.replace(fullMatch, replacement);
   fs.writeFileSync('$main_js', code);
   console.log('handleCommandLineArgs patched for Linux argv (regex match)');
+} else if (/handleCommandLineArgs\(\w+\)\{[^}]*process\.platform===\"linux\"/.test(code)) {
+  // Figma 126.11+ filters Linux CLI flags itself, but still keeps our app.asar
+  // path and would try to open it as a file. Skip it inside Figma's own loop.
+  const nativePattern = /(async handleCommandLineArgs\(\w+\)\{[^}]*?for\(let \w+=0;\w+<\w+\.length;\w+\+\+\)\{let (\w+)=\w+\[\w+\];)/;
+  if (code.includes('.endsWith(\".asar\"))continue;')) {
+    console.log('handleCommandLineArgs native Linux handling already patched - skipping');
+  } else if (nativePattern.test(code)) {
+    code = code.replace(nativePattern, (all, head, v) => head + 'if(' + v + '.endsWith(\".asar\"))continue;');
+    fs.writeFileSync('$main_js', code);
+    console.log('handleCommandLineArgs: native Linux handling found, added app.asar skip');
+  } else {
+    console.error('Warning: native handleCommandLineArgs found but asar-skip pattern did not match');
+  }
 } else {
   console.error('Warning: handleCommandLineArgs pattern not found - Figma may have updated');
   console.error('Auth redirect from browser may not work');
@@ -1126,7 +1153,7 @@ let code = fs.readFileSync('$main_js', 'utf8');
 
 // Regex to match: VAR.setAlwaysOnTop(!0,"pop-up-menu"),VAR.webContents.on("will-navigate"
 // The variable name may change across Figma versions
-const trayVarPattern = /(\w+)\.setAlwaysOnTop\(!0,"pop-up-menu"\),\1\.webContents\.on\("will-navigate"/;
+const trayVarPattern = /(\w+)\.setAlwaysOnTop\(!0,\"pop-up-menu\"\),\1\.webContents\.on\(\"will-navigate\"/;
 const trayVarMatch = code.match(trayVarPattern);
 const trayVar = trayVarMatch ? trayVarMatch[1] : 't';
 const oldPattern = trayVar + '.setAlwaysOnTop(!0,\"pop-up-menu\"),' + trayVar + '.webContents.on(\"will-navigate\"';

@@ -33,6 +33,13 @@ function resolveAppIconPath() {
 const NATIVE_FRAME = process.env.FIGMA_NATIVE_FRAME === '1';
 const HIDE_CAPTION_BUTTONS_CSS =
 	'#__MINIMIZE_CAPTION_BUTTON__,#__MAXIMIZE_CAPTION_BUTTON__,#__CLOSE_CAPTION_BUTTON__{display:none!important}';
+// The tab bar (shell.html) is transparent, so the window background shows
+// through: white when nativeTheme reports light at startup, and with notches
+// at the top corners where Chromium rounds the frameless window background.
+// Paint only the 38px tab bar: the shell view grows to full height for tab
+// hover previews, so painting the whole shell would cover the editor.
+const SHELL_TAB_BAR_CSS =
+	'[class^="tab_bar--container"]{background:var(--color-bg-secondary)}';
 
 const WIN_USER_AGENT = `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${process.versions.chrome} Safari/537.36`;
 
@@ -251,6 +258,12 @@ Module.prototype.require = function(id) {
 					constructor(options) {
 						super(options);
 						applyWindowsUserAgent(this.webContents);
+						if (!NATIVE_FRAME) {
+							const wc = this.webContents;
+							wc.on('dom-ready', () => {
+								if (wc.getURL().endsWith('shell.html')) wc.insertCSS(SHELL_TAB_BAR_CSS).catch(() => {});
+							});
+						}
 					}
 				};
 			}

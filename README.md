@@ -3,7 +3,7 @@
   Figma Desktop for Linux
 </h1>
 
-A fork from [IliyaBrook's Figma Linux](https://github.com/IliyaBrook/figma-linux), as the original author may not maintain this in the future. See more at their repo's README.
+A maintained fork of [IliyaBrook's Figma Linux](https://github.com/IliyaBrook/figma-linux), which is archived. This fork keeps the patches working with new Figma releases.
 
 <p align="center">
   Run the <b>real</b> Figma Desktop app on Linux — not a browser wrapper, not a web app,<br/>
@@ -20,7 +20,7 @@ A fork from [IliyaBrook's Figma Linux](https://github.com/IliyaBrook/figma-linux
   <img src="https://img.shields.io/badge/Package-AppImage%20%7C%20deb%20%7C%20rpm-purple?style=for-the-badge" alt="Packages" />
 </p>
 
-This project extracts the official Figma Desktop Windows installer, patches it for Linux compatibility, and packages it as an **AppImage**, **.deb**, or **.rpm**. You get the real desktop client experience: system tray icon, `figma://` protocol handling, MCP server support, native window frames, local font support, and offline file opening.
+This project extracts the official Figma Desktop Windows installer, patches it for Linux compatibility, and packages it as an **AppImage**, **.deb**, or **.rpm**. You get the real desktop client experience: system tray icon, `figma://` protocol handling, MCP server support, Figma's own titlebar (or native window frames), local font support, and offline file opening.
 
 ## Why This Exists
 
@@ -46,7 +46,7 @@ The build script performs a multi-stage pipeline:
 
 1. **Extract** — Downloads (or uses a local copy of) `FigmaSetup.exe`, unpacks the Squirrel/NuGet package to reach `app.asar`
 2. **Patch** — Applies Linux-specific fixes:
-   - Enables native window frames (Figma ships with `frame:false` for custom titlebar)
+   - Keeps Figma's own titlebar on the main window (`--native-frame` switches to the system titlebar)
    - Stubs Windows/macOS native modules (`bindings.node`, `desktop_rust.node`) with JS equivalents
    - Spoofs the renderer User-Agent as Windows so Figma enables the desktop/local font flows
    - Starts a built-in Linux font helper and scans system/user font directories
@@ -111,7 +111,7 @@ AppImage packaging uses SHA-256-verified appimagetool `1.9.1` and Type-2 runtime
 #### Build & Run
 
 ```bash
-git clone https://github.com/IliyaBrook/figma-linux.git
+git clone https://github.com/simmmmm/figma-linux.git
 cd figma-linux
 
 # Build an AppImage (default)
@@ -289,7 +289,7 @@ figma-desktop-linux/
   Makefile                          # Build/run shortcuts
   figma-version-tool.sh             # Compare RELEASES vs FigmaSetup.exe versions
   scripts/
-    frame-fix-wrapper.js            # BrowserWindow monkey-patch for native frames
+    frame-fix-wrapper.js            # BrowserWindow monkey-patch for the titlebar and window frames
     figma-native-stub.js            # JS stubs for Windows/macOS native modules
     font-enum/                      # Pure JS local/system font scanner + parser
     launcher-common.sh              # Shared X11/Wayland detection logic
@@ -297,13 +297,15 @@ figma-desktop-linux/
     build-deb-package.sh            # Debian packaging
     build-rpm-package.sh            # RPM packaging
   .github/workflows/
+    check-upstream.yml              # Daily check for a new Figma version, opens an issue
+    release.yml                     # Builds AppImage/deb/rpm and publishes a release on a version tag
     font-enum-tests.yml             # Unit tests for the local font implementation
-    global-workflows.yml            # Telegram, stale issue, and issue triage workflows
+    installer-update-tests.yml      # Build and launcher tests
 ```
 
 ### What Gets Patched
 
-- **Window shell** — forces native frames, hides the Windows caption buttons, keeps the menu bar hidden by default, and fixes stale content bounds after Linux tiling/maximize events.
+- **Window shell** — keeps Figma's own titlebar and paints the tab bar in the theme color (or, with `--native-frame`, uses native frames and hides the Windows caption buttons), keeps the menu bar hidden by default, and fixes stale content bounds after Linux tiling/maximize events.
 - **Native modules** — redirects `bindings.node` and `desktop_rust.node` imports to `figma-native-stub.js`, including the `bindings_worker.js` utility process used for font enumeration.
 - **Local fonts** — starts a built-in localhost helper at `127.0.0.1:44950` with `/figma/version`, `/figma/font-files`, and `/figma/font-file`, backed by the pure JS scanner in `scripts/font-enum/`.
 - **Linux argument handling** — rewrites `handleCommandLineArgs` so `figma://` URLs and file paths are found even when Electron inserts Linux launcher flags before the app path.
@@ -312,7 +314,7 @@ figma-desktop-linux/
 
 ## Known Limitations
 
-- **No auto-updates** — The Squirrel updater is Windows-only. Rebuild to update to a new version.
+- **No built-in auto-updates** — The Squirrel updater is Windows-only. Update the AppImage with GearLever or `--update` (see [Updates](#updates-gearlever-am-and-cli)), or rebuild.
 - **No eyedropper tool** — Requires native screen capture (`bindings.node`), which is stubbed.
 - **x86_64 only** — Figma's Windows installer is x86_64-only.
 - **Font preview endpoint is not implemented** — Fonts load through the built-in helper, but `/figma/font-preview` currently returns 404.

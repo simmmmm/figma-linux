@@ -11,7 +11,7 @@ A fork from [IliyaBrook's Figma Linux](https://github.com/IliyaBrook/figma-linux
 </p>
 
 <p align="center">
-  <a href="https://github.com/IliyaBrook/figma-linux/releases/latest"><img src="https://img.shields.io/github/v/release/IliyaBrook/figma-linux?style=for-the-badge&label=Release&color=blue" alt="Release" /></a>
+  <a href="https://github.com/simmmmm/figma-linux/releases/latest"><img src="https://img.shields.io/github/v/release/simmmmm/figma-linux?style=for-the-badge&label=Release&color=blue" alt="Release" /></a>
   &nbsp;
   <img src="https://img.shields.io/badge/Platform-Linux%20x86__64-orange?style=for-the-badge&logo=linux&logoColor=white" alt="Platform" />
   &nbsp;
@@ -59,7 +59,7 @@ The build script performs a multi-stage pipeline:
 
 ### Option 1: Download an Existing AppImage
 
-Existing AppImage, deb, and rpm packages remain available on the [Releases](https://github.com/IliyaBrook/figma-linux/releases) page. These are archived builds and will not receive updates.
+Download the latest AppImage from the [Releases](https://github.com/simmmmm/figma-linux/releases/latest) page. Older builds from before this fork are archived on the [original project's Releases](https://github.com/IliyaBrook/figma-linux/releases) page.
 
 ```bash
 chmod +x figma-desktop-*.AppImage

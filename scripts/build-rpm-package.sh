@@ -63,6 +63,11 @@ Categories=Graphics;Development;
 MimeType=x-scheme-handler/figma;
 StartupWMClass=figma-desktop
 Comment=Figma Desktop for Linux
+Actions=native-frame;
+
+[Desktop Action native-frame]
+Name=Figma (native titlebar)
+Exec=/usr/bin/figma-desktop --native-frame %u
 EOF
 
 # --- Create Launcher Script ---
@@ -76,6 +81,8 @@ source "/usr/lib/$package_name/launcher-common.sh"
 # Setup logging and environment
 setup_logging || exit 1
 setup_electron_env
+parse_launcher_flags "\$@"
+set -- "\${launcher_args[@]}"
 
 # Ensure figma:// URL scheme is registered for this user.
 # %post sets a system-wide default, but per-user registration here

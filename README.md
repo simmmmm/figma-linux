@@ -221,6 +221,18 @@ a manual fallback for driver problems. Native Wayland is used by default when ru
 on a Wayland display. `FIGMA_USE_X11=1` (or `FIGMA_USE_WAYLAND=0`) allows opting
 into XWayland if required.
 
+### Titlebar
+
+By default the main window uses Figma's own titlebar: the tab bar with Figma's
+minimize, maximize and close buttons, as on Windows. If that does not work well
+with your desktop, use the native titlebar instead:
+
+```bash
+./figma-desktop-*.AppImage --native-frame   # or: FIGMA_NATIVE_FRAME=1
+```
+
+The desktop entry also offers this as a right-click action: **Figma (native titlebar)**.
+
 ## Extra Features
 
 This build includes enhancements not available in the official Figma Desktop client:

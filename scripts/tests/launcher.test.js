@@ -83,3 +83,13 @@ test('software override works without probe tools, including native Wayland', ()
 test('invalid renderer is rejected instead of silently changing rendering', () => {
   assert.throws(() => launchArgs({ env: { FIGMA_RENDERER: 'typo' } }), /Invalid FIGMA_RENDERER/);
 });
+
+test('--native-frame sets FIGMA_NATIVE_FRAME and is removed from app arguments', () => {
+  const out = execFileSync('bash', ['-c', `source "$1"; shift
+    parse_launcher_flags "$@"
+    printf '%s\\n' "env=\${FIGMA_NATIVE_FRAME:-unset}" "\${launcher_args[@]}"`,
+  'test', launcher, '--native-frame', 'figma://file/a b', '--other'], {
+    encoding: 'utf8', env: { ...process.env, FIGMA_NATIVE_FRAME: '' },
+  }).trim().split('\n');
+  assert.deepEqual(out, ['env=1', 'figma://file/a b', '--other']);
+});

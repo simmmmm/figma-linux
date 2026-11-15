@@ -970,18 +970,9 @@ if (code.includes(oldPattern)) {
 		echo "Patched $shell_js"
 	fi
 
-	# Inject CSS to hide Windows caption buttons (minimize/maximize/close)
-	# but keep the app menu dropdown button visible on Linux
-	local shell_html='app.asar.contents/shell.html'
-	if [[ -f $shell_html ]]; then
-		sed -i 's|</head>|<style>\
-#__MINIMIZE_CAPTION_BUTTON__,\
-#__MAXIMIZE_CAPTION_BUTTON__,\
-#__CLOSE_CAPTION_BUTTON__ { display: none !important; }\
-</style>\
-</head>|' "$shell_html"
-		echo "Patched $shell_html: hidden Windows caption buttons via CSS"
-	fi
+	# Figma's own caption buttons (minimize/maximize/close) stay visible: the main
+	# window is frameless by default. frame-fix-wrapper.js hides them only when
+	# FIGMA_NATIVE_FRAME=1 gives the window a native frame.
 
 	# ---- Update package.json ----
 	echo 'Modifying package.json to load frame fix...'

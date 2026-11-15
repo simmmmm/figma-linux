@@ -94,6 +94,8 @@ source "$appdir/usr/lib/figma-desktop/launcher-common.sh"
 # Setup logging and environment
 setup_logging || exit 1
 setup_electron_env
+parse_launcher_flags "$@"
+set -- "${launcher_args[@]}"
 
 # --- Desktop Integration for figma:// URL scheme and Taskbar Icon ---
 # Register .desktop file so the system knows how to handle figma:// URLs and taskbar icons
@@ -121,7 +123,8 @@ integrate_desktop() {
 	local current_exec=''
 	[[ -f $desktop_file ]] && current_exec=$(grep '^Exec=' "$desktop_file" 2>/dev/null | head -1)
 
-	if [[ ! -f $desktop_file ]] || [[ $current_exec != "Exec=\"${appimage_path}\" %u" ]]; then
+	if [[ ! -f $desktop_file ]] || [[ $current_exec != "Exec=\"${appimage_path}\" %u" ]] ||
+		! grep -q '^Actions=native-frame;' "$desktop_file"; then
 		cat > "$desktop_file" << DESKTOP
 [Desktop Entry]
 Name=Figma
@@ -135,10 +138,18 @@ MimeType=x-scheme-handler/figma;
 StartupWMClass=figma-desktop
 X-AppImage-Version=${app_version}
 X-AppImage-Name=Figma Desktop
+Actions=native-frame;
 DESKTOP
 		if [[ -n $update_info ]]; then
 			echo "X-AppImage-Update-Information=${update_info}" >> "$desktop_file"
 		fi
+		# Desktop Action group must come after all main-group keys
+		cat >> "$desktop_file" << DESKTOP
+
+[Desktop Action native-frame]
+Name=Figma (native titlebar)
+Exec="${appimage_path}" --native-frame %u
+DESKTOP
 		# Ensure backward compatibility symlink exists
 		ln -sf "$desktop_file" "$legacy_desktop_file" 2>/dev/null || true
 		needs_update=true

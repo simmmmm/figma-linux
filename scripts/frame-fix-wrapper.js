@@ -30,6 +30,10 @@ function resolveAppIconPath() {
 	return '';
 }
 
+const NATIVE_FRAME = process.env.FIGMA_NATIVE_FRAME === '1';
+const HIDE_CAPTION_BUTTONS_CSS =
+	'#__MINIMIZE_CAPTION_BUTTON__,#__MAXIMIZE_CAPTION_BUTTON__,#__CLOSE_CAPTION_BUTTON__{display:none!important}';
+
 const WIN_USER_AGENT = `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${process.versions.chrome} Safari/537.36`;
 
 function applyWindowsUserAgent(webContents) {
@@ -81,6 +85,7 @@ Module.prototype.require = function(id) {
 						console.log('[Frame Fix] BrowserWindow constructor called');
 					}
 
+					const isMainWindow = !!options && 'titleBarStyle' in options;
 					if (process.platform === 'linux') {
 						options = options || {};
 						// Set window icon for X11 _NET_WM_ICON and GTK window icon
@@ -88,18 +93,25 @@ Module.prototype.require = function(id) {
 							options.icon = appIconPath;
 						}
 						const originalFrame = options.frame;
-						// Force native frame
-						options.frame = true;
+						// Only the main window passes titleBarStyle. It gets Figma's own
+						// titlebar (tabs + HTML caption buttons) unless FIGMA_NATIVE_FRAME=1.
+						options.frame = !(isMainWindow && !NATIVE_FRAME);
 						// Hide the menu bar by default (Alt key will toggle it)
 						options.autoHideMenuBar = true;
 						// Remove custom titlebar options
 						delete options.titleBarStyle;
 						delete options.titleBarOverlay;
-						console.log(`[Frame Fix] Modified frame from ${originalFrame} to true`);
+						console.log(`[Frame Fix] Modified frame from ${originalFrame} to ${options.frame}`);
 					}
 					super(options);
 
 					if (process.platform === 'linux') {
+						// Native frame already has buttons: hide Figma's own caption buttons.
+						if (isMainWindow && NATIVE_FRAME) {
+							this.webContents.on('dom-ready', () => {
+								this.webContents.insertCSS(HIDE_CAPTION_BUTTONS_CSS).catch(() => {});
+							});
+						}
 						if (!isTrayWindow) {
 							applyWindowsUserAgent(this.webContents);
 							if (appIconPath) {

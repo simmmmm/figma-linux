@@ -114,6 +114,21 @@ build_electron_args() {
 	fi
 }
 
+# Handle launcher-only flags and drop them from the app arguments.
+#   --native-frame  use the desktop's native titlebar instead of Figma's own
+# Sets: launcher_args array (the remaining arguments)
+parse_launcher_flags() {
+	launcher_args=()
+	local arg
+	for arg in "$@"; do
+		if [[ $arg == --native-frame ]]; then
+			export FIGMA_NATIVE_FRAME=1
+		else
+			launcher_args+=("$arg")
+		fi
+	done
+}
+
 # Set common environment variables
 setup_electron_env() {
 	export ELECTRON_FORCE_IS_PACKAGED=true

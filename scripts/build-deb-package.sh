@@ -175,6 +175,12 @@ EOF
 chmod +x "$install_dir/bin/figma-desktop" || exit 1
 echo 'Launcher script created'
 
+# arch/PKGBUILD reuses the usr/ tree staged above and skips the Debian parts.
+if [[ ${STAGE_ONLY:-} == 1 ]]; then
+	echo "Staged usr/ tree in $install_dir"
+	exit 0
+fi
+
 # --- Create Control File ---
 echo 'Creating control file...'
 cat > "$package_root/DEBIAN/control" << EOF

@@ -1,6 +1,6 @@
 APPIMAGE := $(firstword $(wildcard figma-desktop-*.AppImage build/figma-desktop-*.AppImage))
 
-.PHONY: build build-deb build-rpm build-appimage run run-debug clean url
+.PHONY: build build-deb build-rpm build-appimage build-pacman run run-debug clean url
 
 build: build-appimage
 
@@ -12,6 +12,10 @@ build-rpm:
 
 build-appimage:
 	./build.sh --build appimage --clean no
+
+# Arch/CachyOS: build and install the pacman package (asks for sudo)
+build-pacman:
+	cd arch && makepkg -fsi
 
 run:
 ifndef APPIMAGE
@@ -30,6 +34,7 @@ clean:
 	rm -f figma-desktop-*.AppImage
 	rm -f figma-desktop_*.deb
 	rm -f figma-desktop-*.rpm
+	rm -rf arch/src arch/pkg arch/*.pkg.tar.*
 
 url:
 	./figma-version-tool.sh

@@ -1,0 +1,34 @@
+# Figma Desktop for Linux as a pacman package (Arch, CachyOS, Manjaro).
+# Builds from this repository: cd arch && makepkg -fsi (also to update)
+# The layout matches the .deb: /usr/lib/figma-desktop, /usr/bin/figma-desktop.
+
+pkgname=figma-desktop
+pkgver=126.12.7
+pkgrel=1
+pkgdesc='Figma Desktop, the official Windows client repacked for Linux'
+arch=(x86_64)
+url='https://github.com/simmmmm/figma-linux'
+license=(LicenseRef-proprietary)
+depends=(gtk3 nss alsa-lib libxss)
+makedepends=(nodejs 7zip imagemagick wget)
+conflicts=(figma-linux)
+options=(!strip !debug)
+
+_repo="$startdir/.."
+
+prepare() {
+	cd "$_repo"
+	./build.sh --build appimage --clean no
+}
+
+pkgver() {
+	cd "$_repo"
+	ls -t figma-desktop-*-amd64.AppImage | head -1 | sed -E 's/^figma-desktop-(.+)-amd64\.AppImage$/\1/'
+}
+
+package() {
+	cd "$_repo"
+	STAGE_ONLY=1 scripts/build-deb-package.sh "$pkgver" amd64 "$_repo/build" \
+		"$_repo/build/electron-app" "$pkgname" '' ''
+	cp -a build/package/usr "$pkgdir/"
+}

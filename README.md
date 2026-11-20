@@ -26,6 +26,16 @@ On first launch it adds itself to your app menu and handles `figma://` links.
 
 Update with [GearLever](https://flathub.org/apps/it.mijorus.gearlever) or `./figma-desktop-*.AppImage --update`.
 
+### Arch / CachyOS
+
+Build and install it as a pacman package. Run the same command again to update:
+
+```bash
+git clone https://github.com/simmmmm/figma-linux.git
+cd figma-linux/arch
+makepkg -fsi
+```
+
 ## Titlebar
 
 Figma's own tab bar is the titlebar by default. For the system titlebar:
